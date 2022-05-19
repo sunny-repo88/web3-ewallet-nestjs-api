@@ -9,9 +9,9 @@ export class AppService {
   masterKey: string;
 
   constructor() {
-    this.serverUrl = process.env.moralisServerUrl;
-    this.appId = process.env.moralisAppId;
-    this.masterKey = process.env.moralisMasterKey;
+    this.serverUrl = process.env.MORALIS_SERVER_URL;
+    this.appId = process.env.MORALIS_APPID;
+    this.masterKey = process.env.MORALIS_MASTERKEY;
   }
 
   getHello(): string {
