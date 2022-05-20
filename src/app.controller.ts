@@ -9,7 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-
+const InputDataDecoder = require('ethereum-input-data-decoder');
 import axios from 'axios';
 
 export class ResponseMetaData {
@@ -30,7 +30,7 @@ export class ResponseEntity {
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get()
   getHello(): string {
@@ -118,10 +118,55 @@ export class AppController {
         offset: offset,
         limit: limit,
       };
-      const transactions = await this.appService.getTransactions(options);
+      const transactionsResult = await this.appService.getTransactions(options);
+      const transactions = transactionsResult.result;
+
+      const cached_to_addresses = [];
+      // cache unique to address
+      console.log("cache unique to_address (contract address)");
+      for (let index = 0; index < transactions.length; index++) {
+        const element = transactions[index];
+        if (
+          !cached_to_addresses.includes(element.to_address) &&
+          element.to_address
+        ) {
+          cached_to_addresses.push(element.to_address);
+        }
+      }
+      // cache valid contracts
+      console.log("cache valid contracts");
+      let validContracts = {};
+      for (let index = 0; index < cached_to_addresses.length; index++) {
+        const cached_to_address = cached_to_addresses[index];
+        const contractInfo = await axios.get(
+          `https://api.etherscan.io/api?module=contract&action=getabi&address=${cached_to_address}&apikey=${process.env.ETHERSCAN_API_KEY}`
+        ).then((response) => response.data);
+        if (contractInfo.status == "1") {
+          validContracts[cached_to_address] = contractInfo.result;
+        }
+      }
+
+      // running input data decoder
+      console.log("input data decoder");
+      for (let index = 0; index < transactions.length; index++) {
+        const transaction = transactions[index];
+        transaction["decoded_input"] = {};
+        if (transaction.to_address in validContracts) {
+          const decoder = new InputDataDecoder(
+            validContracts[transaction.to_address]
+          );
+          // input data from transaction api
+          const data = transaction.input;
+          const result = decoder.decodeData(data);
+          // print all the keys
+          // ["method", "types", "inputs", "names"];
+          transaction["decoded_input"] = result;
+          console.log(transaction);
+        }
+      }
       return new ResponseEntity({
         status: HttpStatus.OK,
-        results: transactions.result,
+        results: transactions,
         metaData: {
           total: transactions.total,
           page: transactions.page,
