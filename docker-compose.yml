@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  postgres:
+    image: postgres:12
+    container_name: web3-ewallet-db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5431:5432"

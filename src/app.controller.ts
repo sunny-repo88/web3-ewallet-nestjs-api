@@ -11,6 +11,8 @@ import {
 import { AppService } from './app.service';
 const InputDataDecoder = require('ethereum-input-data-decoder');
 import axios from 'axios';
+import { Logger } from '@nestjs/common';
+import { TransactionService } from './transaction.service';
 
 export class ResponseMetaData {
   total = 0;
@@ -30,7 +32,11 @@ export class ResponseEntity {
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  private readonly logger = new Logger(AppController.name);
+  constructor(private readonly appService: AppService,
+    private readonly transactionService: TransactionService,
+  ) {
+  }
 
   @Get()
   getHello(): string {
@@ -111,6 +117,7 @@ export class AppController {
     if (limit > 50) {
       limit = 50;
     }
+
     try {
       // get wallet addresss/user transactions
       const options = {
@@ -118,12 +125,13 @@ export class AppController {
         offset: offset,
         limit: limit,
       };
+      let transactions = []
       const transactionsResult = await this.appService.getTransactions(options);
-      const transactions = transactionsResult.result;
+      transactions = transactionsResult.result;
 
       const cached_to_addresses = [];
       // cache unique to address
-      console.log("cache unique to_address (contract address)");
+      this.logger.log("cache unique to_address (contract address)");
       for (let index = 0; index < transactions.length; index++) {
         const element = transactions[index];
         if (
@@ -134,7 +142,7 @@ export class AppController {
         }
       }
       // cache valid contracts
-      console.log("cache valid contracts");
+      this.logger.log("cache valid contracts");
       let validContracts = {};
       for (let index = 0; index < cached_to_addresses.length; index++) {
         const cached_to_address = cached_to_addresses[index];
@@ -147,7 +155,7 @@ export class AppController {
       }
 
       // running input data decoder
-      console.log("input data decoder");
+      this.logger.log("input data decoder");
       for (let index = 0; index < transactions.length; index++) {
         const transaction = transactions[index];
         transaction["decoded_input"] = {};
@@ -161,16 +169,31 @@ export class AppController {
           // print all the keys
           // ["method", "types", "inputs", "names"];
           transaction["decoded_input"] = result;
-          console.log(transaction);
         }
+        transaction.nonce = parseInt(transaction.nonce)
+        transaction.transaction_index = parseInt(transaction.transaction_index)
+        transaction.value = parseInt(transaction.value)
+        transaction.gas = parseInt(transaction.gas)
+        transaction.gas_price = parseInt(transaction.gas_price)
+        transaction.receipt_cumulative_gas_used = parseInt(transaction.receipt_cumulative_gas_used)
+        transaction.receipt_gas_used = parseInt(transaction.receipt_gas_used)
+        transaction.receipt_status = parseInt(transaction.receipt_status)
+        transaction.block_number = parseInt(transaction.block_number)
+        transaction.wallet_id = walletAddress
+        delete transaction.transfer_index
       }
+
+      // save to db
+      this.logger.log('saving db')
+      await this.transactionService.createTransactions(transactions);
+
       return new ResponseEntity({
         status: HttpStatus.OK,
         results: transactions,
         metaData: {
-          total: transactions.total,
-          page: transactions.page,
-          pageSize: transactions.page_size,
+          total: transactionsResult.total,
+          page: transactionsResult.page,
+          pageSize: transactionsResult.page_size,
         },
       });
     } catch (error) {

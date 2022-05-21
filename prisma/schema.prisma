@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id    Int     @default(autoincrement()) @id
+  hash String
+  nonce  Int
+  transaction_index  Int
+  from_address  String
+  to_address String?
+  value  BigInt
+  gas  Int
+  gas_price  BigInt
+  input String
+  receipt_cumulative_gas_used BigInt
+  receipt_gas_used Int
+  receipt_contract_address String?
+  receipt_root String?
+  receipt_status Int
+  block_timestamp String
+  block_number Int
+  block_hash String
+  decoded_input Json?
+  wallet_id    String 
+}
+
+
