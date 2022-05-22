@@ -165,9 +165,9 @@ export class AppController {
           .then((response) => response.data);
         if (contractInfo.status == '1') {
           validContracts[cached_to_address] = contractInfo.result;
+          this.logger.log(cached_to_address)
         }
       }
-
       // running input data decoder
       this.logger.log('input data decoder');
       for (let index = 0; index < transactions.length; index++) {
@@ -183,7 +183,6 @@ export class AppController {
           // print all the keys
           // ["method", "types", "inputs", "names"];
           transaction['decoded_input'] = result;
-          this.logger.log(transaction.to_address)
         }
         transaction.nonce = parseInt(transaction.nonce);
         transaction.transaction_index = parseInt(transaction.transaction_index);
