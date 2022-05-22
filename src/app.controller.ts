@@ -38,7 +38,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly transactionService: TransactionService,
-  ) {}
+  ) { }
 
   @Get()
   getHello(): string {
@@ -134,7 +134,7 @@ export class AppController {
         if (
           transactionsResult.page != 0 &&
           transactionsResult.page * transactionsResult.page_size >
-            transactionsResult.total
+          transactionsResult.total
         ) {
           done = 1;
         }
@@ -183,6 +183,7 @@ export class AppController {
           // print all the keys
           // ["method", "types", "inputs", "names"];
           transaction['decoded_input'] = result;
+          this.logger.log(transaction['decoded_input'])
         }
         transaction.nonce = parseInt(transaction.nonce);
         transaction.transaction_index = parseInt(transaction.transaction_index);
