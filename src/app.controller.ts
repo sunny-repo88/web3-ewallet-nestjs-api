@@ -131,9 +131,9 @@ export class AppController {
           options,
         );
         transactions = transactions.concat(transactionsResult.result);
+        // page is starting from 0
         if (
-          transactionsResult.page != 0 &&
-          transactionsResult.page * transactionsResult.page_size >
+          (transactionsResult.page + 1) * transactionsResult.page_size >
           transactionsResult.total
         ) {
           done = 1;
@@ -141,11 +141,20 @@ export class AppController {
         offset += limit;
       }
 
+      const transactionsFromDb = await this.transactionService.getTransactions(walletAddress);
+
+      // only insert those are new.
+      const newTransactions = transactions.filter(function (obj) {
+        return !transactionsFromDb.some(function (obj2) {
+          return obj.block_hash == obj2.block_hash;
+        });
+      });
+
       const cached_to_addresses = [];
       // cache unique to address
       this.logger.log('cache unique to_address (contract address)');
-      for (let index = 0; index < transactions.length; index++) {
-        const element = transactions[index];
+      for (let index = 0; index < newTransactions.length; index++) {
+        const element = newTransactions[index];
         if (
           !cached_to_addresses.includes(element.to_address) &&
           element.to_address
@@ -170,8 +179,8 @@ export class AppController {
       }
       // running input data decoder
       this.logger.log('input data decoder');
-      for (let index = 0; index < transactions.length; index++) {
-        const transaction = transactions[index];
+      for (let index = 0; index < newTransactions.length; index++) {
+        const transaction = newTransactions[index];
         transaction['decoded_input'] = {};
         if (transaction.to_address in validContracts) {
           const decoder = new InputDataDecoder(
@@ -202,13 +211,12 @@ export class AppController {
       // save to db
       this.logger.log('saving db');
       await this.transactionService.createTransactions(
-        walletAddress,
-        transactions,
+        newTransactions,
       );
 
       return new ResponseEntity({
         status: HttpStatus.OK,
-        results: transactions,
+        results: newTransactions,
       });
     } catch (error) {
       throw new HttpException(
