@@ -183,7 +183,7 @@ export class AppController {
           // print all the keys
           // ["method", "types", "inputs", "names"];
           transaction['decoded_input'] = result;
-          this.logger.log(transaction['decoded_input'])
+          this.logger.log(transaction.to_address)
         }
         transaction.nonce = parseInt(transaction.nonce);
         transaction.transaction_index = parseInt(transaction.transaction_index);
