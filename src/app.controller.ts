@@ -165,6 +165,7 @@ export class AppController {
             `https://api.etherscan.io/api?module=contract&action=getabi&address=${cached_to_address}&apikey=${process.env.ETHERSCAN_API_KEY}`,
           )
           .then((response) => response.data);
+        this.logger.log(cached_to_address)
         this.logger.log(contractInfo.status)
         if (contractInfo.status == '1') {
           validContracts[cached_to_address] = contractInfo.result;
