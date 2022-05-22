@@ -166,7 +166,7 @@ export class AppController {
           )
           .then((response) => response.data);
         this.logger.log(cached_to_address)
-        this.logger.log(contractInfo.status)
+        this.logger.log(contractInfo)
         if (contractInfo.status == '1') {
           validContracts[cached_to_address] = contractInfo.result;
         }
