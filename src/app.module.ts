@@ -10,4 +10,4 @@ import { TransactionService } from './transaction.service';
   controllers: [AppController],
   providers: [AppService, TransactionService, PrismaService],
 })
-export class AppModule { }
+export class AppModule {}
